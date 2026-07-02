@@ -1,0 +1,4 @@
+python-telegram-bot[job-queue]==21.0
+python-dotenv==1.0.0
+psutil==5.9.8
+web3==6.11.3
