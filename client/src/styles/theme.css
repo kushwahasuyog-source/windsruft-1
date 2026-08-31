@@ -1,0 +1,113 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * PDFForge design tokens. Every colour, radius, shadow, spacing and type
+ * decision lives here; components only ever reference semantic Tailwind
+ * classes (bg-surface, text-muted, border-subtle, bg-accent, ...) so the whole
+ * product can be re-skinned from this file plus tailwind.config.js.
+ */
+:root {
+  color-scheme: light;
+
+  --color-surface: 255 255 255;
+  --color-elevated: 255 255 255;
+  --color-sunken: 247 248 250;
+  --color-accent: 79 70 229;
+  --color-accent-fg: 255 255 255;
+  --color-accent-soft: 238 242 255;
+  --color-success: 16 143 92;
+  --color-danger: 200 44 58;
+  --color-warning: 176 106 8;
+
+  --color-text-primary: 22 25 35;
+  --color-text-secondary: 66 72 90;
+  --color-text-muted: 108 116 136;
+
+  --color-border-subtle: 226 229 237;
+  --color-border-strong: 199 204 216;
+
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.25rem;
+  --radius-2xl: 1.5rem;
+  --radius-pill: 999px;
+
+  --shadow-soft: 0 1px 2px rgb(19 22 33 / 0.04), 0 8px 24px rgb(19 22 33 / 0.06);
+  --shadow-card: 0 2px 4px rgb(19 22 33 / 0.05), 0 16px 40px rgb(19 22 33 / 0.08);
+  --shadow-pop: 0 12px 48px rgb(19 22 33 / 0.16);
+
+  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-display: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: ui-monospace, 'SFMono-Regular', 'JetBrains Mono', monospace;
+
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 1.875rem;
+  --text-4xl: 2.5rem;
+  --text-5xl: 3.25rem;
+
+  --space-gutter: 1.25rem;
+  --space-section: 4.5rem;
+  --size-touch-target: 2.75rem;
+  --size-shell: 80rem;
+
+  --motion-duration: 180ms;
+}
+
+.dark {
+  color-scheme: dark;
+
+  --color-surface: 15 17 25;
+  --color-elevated: 24 27 38;
+  --color-sunken: 20 22 32;
+  --color-accent: 139 124 248;
+  --color-accent-fg: 17 19 28;
+  --color-accent-soft: 39 36 66;
+  --color-success: 65 190 133;
+  --color-danger: 248 121 131;
+  --color-warning: 233 176 74;
+
+  --color-text-primary: 244 246 251;
+  --color-text-secondary: 199 205 220;
+  --color-text-muted: 155 163 183;
+
+  --color-border-subtle: 44 49 66;
+  --color-border-strong: 63 70 92;
+
+  --shadow-soft: 0 1px 2px rgb(0 0 0 / 0.3), 0 8px 24px rgb(0 0 0 / 0.28);
+  --shadow-card: 0 2px 4px rgb(0 0 0 / 0.32), 0 16px 40px rgb(0 0 0 / 0.36);
+  --shadow-pop: 0 12px 48px rgb(0 0 0 / 0.5);
+}
+
+@layer base {
+  html {
+    font-family: var(--font-sans);
+  }
+
+  body {
+    @apply bg-surface text-primary antialiased;
+  }
+
+  :focus-visible {
+    @apply outline-none ring-2 ring-accent ring-offset-2;
+    --tw-ring-offset-color: rgb(var(--color-surface));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
