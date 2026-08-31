@@ -11,6 +11,8 @@ export interface Capabilities {
   chrome: boolean;
   ai: boolean;
   ocr: boolean;
+  sharp: boolean;
+  pdfaValidation: boolean;
 }
 
 async function available(binary: string, args = ['--version']): Promise<boolean> {
@@ -39,5 +41,7 @@ export async function detectCapabilities(): Promise<Capabilities> {
     chrome,
     ai: Boolean(process.env.AI_PROVIDER && process.env.AI_API_KEY),
     ocr: Boolean(process.env.OCR_LANG_PATH),
+    sharp: true,
+    pdfaValidation: Boolean(process.env.VERAPDF_PATH),
   };
 }

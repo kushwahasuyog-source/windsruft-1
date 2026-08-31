@@ -29,9 +29,9 @@ Ghostscript enables strong PDF compression; qpdf enables future security flows; 
 
 ## Capability matrix
 
-Implemented: PDF compression (Ghostscript/pdf-lib fallback), merge, split, rotate, page organization, extraction, page numbering, watermarks, cropping, page info, and qpdf-backed password protection/unlocking. Password-protected files are processed only when the user supplies the password; PDFForge never guesses, cracks, or bypasses passwords. Protect and unlock require qpdf. On this deployment qpdf passwords are passed as argv values through Node's `execFile` API (never a shell command); passwords are not logged or persisted.
+Implemented: PDF compression (Ghostscript/pdf-lib fallback), merge, split, rotate, page organization, extraction, page numbering, watermarks, cropping, page info, repair, image/office/HTML conversion, PDF rasterization, PDF/A conversion, and qpdf-backed password protection/unlocking. Password-protected files are processed only when the user supplies the password; PDFForge never guesses, cracks, or bypasses passwords. Protect and unlock require qpdf. On this deployment qpdf passwords are passed as argv values through Node's `execFile` API (never a shell command); passwords are not logged or persisted.
 
-Stubbed for later phases: image, office, OCR, AI, repair, conversion, and authentication integrations. Stub modules expose typed interfaces and return `ENGINE_UNAVAILABLE` rather than pretending to process files.
+OCR remains capability-gated until Tesseract language data is configured with `OCR_LANG_PATH`; for non-Latin searchable layers, configure a Unicode TTF via `OCR_UNICODE_FONT_PATH`. Without that font, PDFForge returns extracted text rather than silently dropping it. PDF/A conversion reports independent validation only when `VERAPDF_PATH` is configured.
 
 ## Environment
 

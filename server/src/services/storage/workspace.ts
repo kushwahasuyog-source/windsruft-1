@@ -71,7 +71,17 @@ export async function serveFile(
     const isZip = header[0] === 0x50 && header[1] === 0x4b;
     const manifest = await readManifest(path.dirname(resolved));
     const displayName = manifest[fileId] ?? (isZip ? 'pdfforge-files.zip' : 'pdfforge-file.pdf');
-    response.type(isZip ? 'zip' : 'application/pdf');
+    const extension = path.extname(displayName).toLowerCase();
+    const contentType = isZip ? 'zip'
+      : extension === '.txt' ? 'text/plain'
+        : extension === '.jpg' || extension === '.jpeg' ? 'image/jpeg'
+          : extension === '.png' ? 'image/png'
+            : extension === '.webp' ? 'image/webp'
+              : extension === '.docx' ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+                : extension === '.pptx' ? 'application/vnd.openxmlformats-officedocument.presentationml.presentation'
+                  : extension === '.xlsx' ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                    : 'application/pdf';
+    response.type(contentType);
     response.setHeader(
       'Content-Disposition',
       `${inline ? 'inline' : 'attachment'}; filename="${displayName.replace(/"/g, '')}"`,

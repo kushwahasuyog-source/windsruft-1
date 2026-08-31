@@ -26,6 +26,7 @@ export const compressionEngine: CompressionEngine = {
         [
           '-sDEVICE=pdfwrite',
           '-dCompatibilityLevel=1.5',
+          '-dDetectDuplicateImages=true',
           `-dPDFSETTINGS=${settings[level]}`,
           '-dNOPAUSE',
           '-dBATCH',

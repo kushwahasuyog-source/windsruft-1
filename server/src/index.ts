@@ -7,6 +7,7 @@ import rateLimit from 'express-rate-limit';
 import multer from 'multer';
 import { AppError, toAppError } from './errors';
 import pdfRoutes from './routes/pdf';
+import convertRoutes from './routes/convert';
 import authRoutes from './routes/auth';
 import { detectCapabilities } from './services/capabilities';
 import { serveFile, sweepWorkspaces } from './services/storage/workspace';
@@ -36,6 +37,8 @@ const apiLimit = rateLimit({
 
 app.use('/api', apiLimit);
 app.use('/api/pdf', pdfRoutes);
+app.use('/api/convert', convertRoutes);
+app.use('/api/pdf', convertRoutes);
 app.use('/api/auth', authRoutes);
 app.get('/api/capabilities', async (_request, response, next) => {
   try {

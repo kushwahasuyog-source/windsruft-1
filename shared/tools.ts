@@ -8,7 +8,7 @@ export type ToolCategory =
   | 'PDF INTELLIGENCE';
 
 export type ToolStatus = 'ready' | 'planned';
-export type AcceptedType = 'pdf' | 'image' | 'docx' | 'xlsx' | 'pptx' | 'html';
+export type AcceptedType = 'pdf' | 'image' | 'doc' | 'docx' | 'xls' | 'xlsx' | 'ppt' | 'pptx' | 'html';
 
 export interface ToolDefinition {
   slug: string;
@@ -63,9 +63,9 @@ const specs: Array<[string, string, string, ToolCategory, AcceptedType[], boolea
   ['repair-pdf', 'Repair PDF', 'Recover readable documents from damaged files.', 'OPTIMIZE PDF', ['pdf'], false, 'repair'],
   ['ocr-pdf', 'OCR PDF', 'Make scanned pages searchable.', 'OPTIMIZE PDF', ['pdf'], false, 'text'],
   ['jpg-to-pdf', 'JPG to PDF', 'Build a PDF from your images.', 'CONVERT TO PDF', ['image'], true, 'image'],
-  ['word-to-pdf', 'Word to PDF', 'Convert Word documents into PDFs.', 'CONVERT TO PDF', ['docx'], true, 'doc'],
-  ['powerpoint-to-pdf', 'PowerPoint to PDF', 'Share presentations as PDFs.', 'CONVERT TO PDF', ['pptx'], true, 'presentation'],
-  ['excel-to-pdf', 'Excel to PDF', 'Export spreadsheets as PDFs.', 'CONVERT TO PDF', ['xlsx'], true, 'sheet'],
+  ['word-to-pdf', 'Word to PDF', 'Convert Word documents into PDFs.', 'CONVERT TO PDF', ['doc', 'docx'], true, 'doc'],
+  ['powerpoint-to-pdf', 'PowerPoint to PDF', 'Share presentations as PDFs.', 'CONVERT TO PDF', ['ppt', 'pptx'], true, 'presentation'],
+  ['excel-to-pdf', 'Excel to PDF', 'Export spreadsheets as PDFs.', 'CONVERT TO PDF', ['xls', 'xlsx'], true, 'sheet'],
   ['html-to-pdf', 'HTML to PDF', 'Create a PDF from a web page.', 'CONVERT TO PDF', ['html'], false, 'web'],
   ['pdf-to-jpg', 'PDF to JPG', 'Turn PDF pages into crisp images.', 'CONVERT FROM PDF', ['pdf'], false, 'image'],
   ['pdf-to-word', 'PDF to Word', 'Make PDF content editable in Word.', 'CONVERT FROM PDF', ['pdf'], false, 'doc'],
@@ -101,6 +101,19 @@ const readySlugs = new Set([
   'crop-pdf',
   'unlock-pdf',
   'protect-pdf',
+  'repair-pdf',
+  'jpg-to-pdf',
+  'scan-to-pdf',
+  'word-to-pdf',
+  'powerpoint-to-pdf',
+  'excel-to-pdf',
+  'html-to-pdf',
+  'pdf-to-jpg',
+  'pdf-to-word',
+  'pdf-to-powerpoint',
+  'pdf-to-excel',
+  'pdf-to-pdfa',
+  'ocr-pdf',
 ]);
 export const toolRegistry: ToolDefinition[] = specs.map(([slug, name, description, category, accepts, multiple, icon]) => ({
   slug,

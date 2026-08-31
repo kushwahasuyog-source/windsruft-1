@@ -18,8 +18,16 @@ function makeId(file: File): string {
   return `${file.name}:${file.size}:${file.lastModified}:${Math.random().toString(36).slice(2)}`;
 }
 
+export interface StandaloneJob {
+  label: string;
+  status: QueueStatus;
+  error?: string;
+  result?: JobResponse;
+}
+
 export function useFileQueue() {
   const [items, setItems] = useState<QueueItem[]>([]);
+  const [standalone, setStandalone] = useState<StandaloneJob>();
   const [processing, setProcessing] = useState(false);
   const controller = useRef<AbortController>();
   const itemsRef = useRef(items);
@@ -68,8 +76,62 @@ export function useFileQueue() {
     if (tool === 'crop') return apiClient.crop(item.file, String(options.box ?? '{}'), String(options.applyTo ?? 'page'), Number(options.page ?? 1), config);
     if (tool === 'protect') return apiClient.protect(item.file, options as Record<string, string | number | boolean>, config);
     if (tool === 'unlock') return apiClient.unlock(item.file, String(options.password ?? ''), config);
+    if (tool === 'repair') return apiClient.repair(item.file, config);
+    if (tool === 'ocr') return apiClient.ocr(item.file, { language: String(options.language ?? 'eng'), dpi: Number(options.dpi ?? 250) }, config);
+    if (tool === 'word-to-pdf') return apiClient.officeToPdf('/api/convert/word-to-pdf', item.file, config);
+    if (tool === 'powerpoint-to-pdf') return apiClient.officeToPdf('/api/convert/ppt-to-pdf', item.file, config);
+    if (tool === 'excel-to-pdf') return apiClient.officeToPdf('/api/convert/excel-to-pdf', item.file, config);
+    if (tool === 'pdf-to-jpg') return apiClient.pdfToJpg(item.file, {
+      format: String(options.format ?? 'jpg'),
+      quality: Number(options.quality ?? 85),
+      dpi: Number(options.dpi ?? 150),
+      pages: String(options.pages ?? 'all'),
+    }, config);
+    if (tool === 'pdf-to-word') return apiClient.pdfToWord(item.file, config);
+    if (tool === 'pdf-to-powerpoint') return apiClient.pdfToPpt(item.file, config);
+    if (tool === 'pdf-to-excel') return apiClient.pdfToExcel(item.file, config);
+    if (tool === 'pdf-to-pdfa') return apiClient.pdfToPdfa(item.file, config);
+    if (tool === 'html-to-pdf') return apiClient.htmlToPdf({
+      mode: options.mode === 'file' ? 'html' : String(options.mode ?? 'html'),
+      html: String(options.html ?? ''),
+      url: String(options.url ?? ''),
+      pageSize: String(options.pageSize ?? 'A4'),
+      orientation: String(options.orientation ?? 'portrait'),
+      margin: Number(options.margin ?? 24),
+      printBackground: Boolean(options.printBackground ?? true),
+    }, options.mode === 'file' ? item.file : options.htmlFile instanceof File ? options.htmlFile : undefined, config);
     throw new Error('Unsupported PDF operation.');
   }, [update]);
+
+  const processStandalone = useCallback(async (label: string, options: QueueOptions) => {
+    const abortController = new AbortController();
+    controller.current = abortController;
+    setProcessing(true);
+    setStandalone({ label, status: 'PROCESSING' });
+    try {
+      const result = await apiClient.htmlToPdf({
+        mode: String(options.mode ?? 'html'),
+        html: String(options.html ?? ''),
+        url: String(options.url ?? ''),
+        pageSize: String(options.pageSize ?? 'A4'),
+        orientation: String(options.orientation ?? 'portrait'),
+        margin: Number(options.margin ?? 24),
+        printBackground: Boolean(options.printBackground ?? true),
+      }, undefined, { signal: abortController.signal });
+      setStandalone({ label, status: 'COMPLETED', result });
+      return result;
+    } catch (error) {
+      setStandalone({
+        label,
+        status: 'FAILED',
+        error: error instanceof ApiClientError ? error.message : 'Something went wrong while processing your request. Please try again.',
+      });
+      return undefined;
+    } finally {
+      setProcessing(false);
+      controller.current = undefined;
+    }
+  }, []);
 
   const process = useCallback(async (tool: string, options: QueueOptions = {}) => {
     const currentItems = itemsRef.current.filter((item) => item.status !== 'COMPLETED');
@@ -96,6 +158,19 @@ export function useFileQueue() {
           const message = error instanceof ApiClientError
             ? error.message
             : 'Something went wrong while processing your file. Please try again.';
+          currentItems.forEach((item) => update(item.id, { status: 'FAILED', error: message }));
+        }
+      } else if (tool === 'jpg-to-pdf' || tool === 'scan-to-pdf') {
+        try {
+          currentItems.forEach((item) => update(item.id, { status: 'PROCESSING', progress: 0, error: undefined }));
+          const order = options.order ? JSON.parse(String(options.order)) as number[] : currentItems.map((_item, index) => index);
+          const orderedItems = order.map((index) => currentItems[index]).filter((item): item is QueueItem => Boolean(item));
+          const result = tool === 'jpg-to-pdf'
+            ? await apiClient.imagesToPdf(orderedItems.map((item) => item.file), options as Record<string, string | number | boolean>, { signal: abortController.signal, onUploadProgress: (event) => currentItems.forEach((item) => update(item.id, { progress: event.total ? Math.round((event.loaded / event.total) * 100) : 0 })) })
+            : await apiClient.scanToPdf(orderedItems.map((item) => item.file), options as Record<string, string | number | boolean>, { signal: abortController.signal, onUploadProgress: (event) => currentItems.forEach((item) => update(item.id, { progress: event.total ? Math.round((event.loaded / event.total) * 100) : 0 })) });
+          currentItems.forEach((item) => update(item.id, { status: 'COMPLETED', progress: 100, result }));
+        } catch (error) {
+          const message = error instanceof ApiClientError ? error.message : 'Something went wrong while processing your file. Please try again.';
           currentItems.forEach((item) => update(item.id, { status: 'FAILED', error: message }));
         }
       } else {
@@ -140,11 +215,16 @@ export function useFileQueue() {
   return {
     items,
     processing,
+    standalone,
     add,
     remove,
     process,
+    processStandalone,
     retry,
     cancel: () => controller.current?.abort(),
-    clear: () => setItems([]),
+    clear: () => {
+      setItems([]);
+      setStandalone(undefined);
+    },
   };
 }

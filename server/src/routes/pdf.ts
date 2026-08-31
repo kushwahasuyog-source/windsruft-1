@@ -372,7 +372,8 @@ router.post('/crop', onePdf.single('file'), async (request, response, next) => {
       applyTo: z.enum(['page', 'all']),
       page: z.number().int().positive().optional(),
     }).parse({ box, applyTo: request.body.applyTo ?? 'page', page: Number(request.body.page) || undefined });
-    if (options.applyTo === 'page' && (!options.page || options.page > info.pages)) throw new AppError('PROCESSING_FAILED', 400, 'Choose a page within the document.');
+    if (options.applyTo === 'page' && !options.page) throw new AppError('PROCESSING_FAILED', 400, 'A page number is required when applying a crop to one page.');
+    if (options.applyTo === 'page' && options.page !== undefined && options.page > info.pages) throw new AppError('PROCESSING_FAILED', 400, 'Choose a page within the document.');
     const workspace = await createWorkspace();
     const fileId = crypto.randomUUID();
     await cropPdf(file.path, path.join(workspace.directory, fileId), options);

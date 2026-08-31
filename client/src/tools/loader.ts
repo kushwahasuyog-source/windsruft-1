@@ -14,6 +14,19 @@ export async function loadToolModule(slug: string): Promise<ToolModule | undefin
       case 'crop-pdf': return (await import('./crop-pdf')).default;
       case 'protect-pdf': return (await import('./protect-pdf')).default;
       case 'unlock-pdf': return (await import('./unlock-pdf')).default;
+      case 'jpg-to-pdf': return (await import('./jpg-to-pdf')).default;
+      case 'scan-to-pdf': return (await import('./scan-to-pdf')).default;
+      case 'word-to-pdf': return (await import('./word-to-pdf')).default;
+      case 'powerpoint-to-pdf': return (await import('./powerpoint-to-pdf')).default;
+      case 'excel-to-pdf': return (await import('./excel-to-pdf')).default;
+      case 'html-to-pdf': return (await import('./html-to-pdf')).default;
+      case 'pdf-to-jpg': return (await import('./pdf-to-jpg')).default;
+      case 'pdf-to-word': return (await import('./pdf-to-word')).default;
+      case 'pdf-to-powerpoint': return (await import('./pdf-to-powerpoint')).default;
+      case 'pdf-to-excel': return (await import('./pdf-to-excel')).default;
+      case 'pdf-to-pdfa': return (await import('./pdf-to-pdfa')).default;
+      case 'repair-pdf': return (await import('./repair-pdf')).default;
+      case 'ocr-pdf': return (await import('./ocr-pdf')).default;
     default: return undefined;
   }
 }

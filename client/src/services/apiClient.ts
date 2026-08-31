@@ -97,6 +97,26 @@ export const apiClient = {
     upload('/api/pdf/protect', [file], Object.fromEntries(Object.entries(options).map(([key, value]) => [key, String(value)])), 'file', config),
   unlock: (file: File, password: string, config?: Pick<AxiosRequestConfig, 'onUploadProgress' | 'signal'>) =>
     upload('/api/pdf/unlock', [file], { password }, 'file', config),
+  repair: (file: File, config?: Pick<AxiosRequestConfig, 'onUploadProgress' | 'signal'>) =>
+    upload('/api/pdf/repair', [file], {}, 'file', config),
+  ocr: (file: File, options: Record<string, string | number>, config?: Pick<AxiosRequestConfig, 'onUploadProgress' | 'signal'>) =>
+    upload('/api/pdf/ocr', [file], Object.fromEntries(Object.entries(options).map(([key, value]) => [key, String(value)])), 'file', config),
+  imagesToPdf: (files: File[], options: Record<string, string | number | boolean>, config?: Pick<AxiosRequestConfig, 'onUploadProgress' | 'signal'>) =>
+    upload('/api/convert/jpg-to-pdf', files, Object.fromEntries(Object.entries(options).map(([key, value]) => [key, String(value)])), 'files', config),
+  scanToPdf: (files: File[], options: Record<string, string | number | boolean>, config?: Pick<AxiosRequestConfig, 'onUploadProgress' | 'signal'>) =>
+    upload('/api/pdf/scan-to-pdf', files, Object.fromEntries(Object.entries(options).map(([key, value]) => [key, String(value)])), 'files', config),
+  officeToPdf: (endpoint: string, file: File, config?: Pick<AxiosRequestConfig, 'onUploadProgress' | 'signal'>) =>
+    upload(endpoint, [file], {}, 'file', config),
+  htmlToPdf: (options: Record<string, string | number | boolean>, file: File | undefined, config?: Pick<AxiosRequestConfig, 'onUploadProgress' | 'signal'>) => {
+    const fields = Object.fromEntries(Object.entries(options).map(([key, value]) => [key, String(value)]));
+    return file ? upload('/api/convert/html-to-pdf', [file], fields, 'file', config) : upload('/api/convert/html-to-pdf', [], fields, 'file', config);
+  },
+  pdfToJpg: (file: File, options: Record<string, string | number>, config?: Pick<AxiosRequestConfig, 'onUploadProgress' | 'signal'>) =>
+    upload('/api/convert/pdf-to-jpg', [file], Object.fromEntries(Object.entries(options).map(([key, value]) => [key, String(value)])), 'file', config),
+  pdfToWord: (file: File, config?: Pick<AxiosRequestConfig, 'onUploadProgress' | 'signal'>) => upload('/api/convert/pdf-to-word', [file], {}, 'file', config),
+  pdfToPpt: (file: File, config?: Pick<AxiosRequestConfig, 'onUploadProgress' | 'signal'>) => upload('/api/convert/pdf-to-ppt', [file], {}, 'file', config),
+  pdfToExcel: (file: File, config?: Pick<AxiosRequestConfig, 'onUploadProgress' | 'signal'>) => upload('/api/convert/pdf-to-excel', [file], {}, 'file', config),
+  pdfToPdfa: (file: File, config?: Pick<AxiosRequestConfig, 'onUploadProgress' | 'signal'>) => upload('/api/convert/pdf-to-pdfa', [file], {}, 'file', config),
   pageInfo: async (file: File) => {
     const body = new FormData();
     body.append('file', file);

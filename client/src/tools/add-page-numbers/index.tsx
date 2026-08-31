@@ -27,6 +27,7 @@ function Settings({ items, settings, onChange }: ToolSettingsProps) {
         <legend className="text-sm font-semibold">Position</legend>
         <div className="mt-2 grid max-w-md grid-cols-3 gap-2">{positions.map((position) => <button type="button" key={position} onClick={() => onChange('position', position)} className={`rounded-lg border p-3 text-sm capitalize ${String(settings.position ?? 'bottom-center') === position ? 'border-accent bg-accent-soft' : 'border-subtle'}`}>{position.replace('-', ' ')}</button>)}</div>
       </fieldset>
+      <p className="mt-3 text-sm text-muted">Page numbers follow each page&apos;s position in the document, even when you apply them to a subset; totals always use the full document page count.</p>
       <label className="mt-5 flex items-center gap-2 text-sm"><input type="checkbox" checked={allPages} onChange={(event) => onChange('allPages', event.target.checked)} />Apply to all pages ({count || '…'})</label>
       {file && (
         <PdfPreview
