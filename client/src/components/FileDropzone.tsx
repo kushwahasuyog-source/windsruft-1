@@ -1,4 +1,4 @@
-import { useId, useRef } from 'react';
+import { useId, useRef, useState } from 'react';
 import type { DragEvent, KeyboardEvent } from 'react';
 import type { AcceptedType } from '@shared/tools';
 import { Card } from './ui/Primitives';
@@ -25,12 +25,23 @@ export function FileDropzone({
 }) {
   const input = useRef<HTMLInputElement>(null);
   const descriptionId = useId();
+  const [error, setError] = useState('');
   const addFiles = (list: FileList | null) => {
     if (!list) return;
-    const unique = Array.from(list).filter((file, index, files) =>
+    const candidates = Array.from(list).filter((file, index, files) =>
       files.findIndex((other) => other.name === file.name && other.size === file.size) === index,
     );
-    onFiles(multiple ? unique : unique.slice(0, 1));
+    const accepted = candidates.filter((file) => {
+      const extension = file.name.split('.').pop()?.toLowerCase();
+      const validType = accepts.some((type) => type === 'pdf'
+        ? extension === 'pdf' || file.type === 'application/pdf'
+        : type === 'image' ? file.type.startsWith('image/')
+          : extension === type);
+      return validType && file.size <= maxSizeMb * 1024 * 1024;
+    });
+    if (accepted.length !== candidates.length) setError(`Choose ${accepts.join(', ')} files up to ${maxSizeMb} MB.`);
+    else setError('');
+    onFiles(multiple ? accepted : accepted.slice(0, 1));
   };
   const handleKey = (event: KeyboardEvent<HTMLElement>) => {
     if (event.key === 'Enter' || event.key === ' ') {
@@ -58,6 +69,7 @@ export function FileDropzone({
       <p id={descriptionId} className="mt-2 text-sm text-muted">
         Accepted: {accepts.join(', ')} · Up to {maxSizeMb} MB per file
       </p>
+      {error && <p className="mt-2 text-sm text-danger" role="alert">{error}</p>}
       <input ref={input} hidden type="file" accept={acceptValue(accepts)} multiple={multiple} onChange={(event) => addFiles(event.target.files)} />
     </Card>
   );

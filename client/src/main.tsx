@@ -5,12 +5,18 @@ import { Header } from './components/Header';
 import { Spinner } from './components/ui/Primitives';
 import './styles/theme.css';
 
-const Home = lazy(async () => import('./pages/Pages').then((module) => ({ default: module.Home })));
-const Tools = lazy(async () => import('./pages/Pages').then((module) => ({ default: module.Tools })));
-const Tool = lazy(async () => import('./pages/Pages').then((module) => ({ default: module.Tool })));
-const Auth = lazy(async () => import('./pages/Pages').then((module) => ({ default: module.Auth })));
-const Dashboard = lazy(async () => import('./pages/Pages').then((module) => ({ default: module.Dashboard })));
-const NotFound = lazy(async () => import('./pages/Pages').then((module) => ({ default: module.NotFound })));
+const Home = lazy(async () => import('./pages/Home').then((module) => ({ default: module.Home })));
+const Tools = lazy(async () => import('./pages/Tools').then((module) => ({ default: module.Tools })));
+const ToolPage = lazy(async () => import('./pages/ToolPage').then((module) => ({ default: module.ToolPage })));
+const Login = lazy(async () => import('./pages/Login').then((module) => ({ default: module.Login })));
+const Signup = lazy(async () => import('./pages/Signup').then((module) => ({ default: module.Signup })));
+const DashboardLayout = lazy(async () => import('./pages/dashboard/DashboardLayout').then((module) => ({ default: module.DashboardLayout })));
+const DashboardHome = lazy(() => import('./pages/dashboard/DashboardHome'));
+const MyFiles = lazy(() => import('./pages/dashboard/MyFiles'));
+const RecentFiles = lazy(() => import('./pages/dashboard/RecentFiles'));
+const Favorites = lazy(() => import('./pages/dashboard/Favorites'));
+const Settings = lazy(() => import('./pages/dashboard/Settings'));
+const NotFound = lazy(async () => import('./pages/NotFound').then((module) => ({ default: module.NotFound })));
 
 function App() {
   return (
@@ -20,10 +26,16 @@ function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/tools" element={<Tools />} />
-          <Route path="/tool/:slug" element={<Tool />} />
-          <Route path="/login" element={<Auth />} />
-          <Route path="/signup" element={<Auth signup />} />
-          <Route path="/dashboard/*" element={<Dashboard />} />
+          <Route path="/tool/:slug" element={<ToolPage />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
+          <Route path="/dashboard" element={<DashboardLayout />}>
+            <Route index element={<DashboardHome />} />
+            <Route path="files" element={<MyFiles />} />
+            <Route path="recent" element={<RecentFiles />} />
+            <Route path="favorites" element={<Favorites />} />
+            <Route path="settings" element={<Settings />} />
+          </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Suspense>
