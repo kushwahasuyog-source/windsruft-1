@@ -3,6 +3,7 @@ import type { ToolModule, ToolRequest } from '../types';
 import type { ToolSettingsProps } from '../types';
 import { PdfPreview } from '../../components/PdfPreview';
 import { Button, Card } from '../../components/ui/Primitives';
+import { SortableList } from '../../components/SortableList';
 
 function Settings({ items, settings, onChange }: ToolSettingsProps) {
   const ids = useMemo(() => {
@@ -12,14 +13,6 @@ function Settings({ items, settings, onChange }: ToolSettingsProps) {
     return [...fromSettings, ...items.map((item) => item.id).filter((id) => !fromSettings.includes(id))];
   }, [items, settings.order]);
   const [rotations, setRotations] = useState<Record<string, number>>({});
-  const move = (id: string, direction: -1 | 1) => {
-    const index = ids.indexOf(id);
-    const nextIndex = index + direction;
-    if (nextIndex < 0 || nextIndex >= ids.length) return;
-    const next = [...ids];
-    [next[index], next[nextIndex]] = [next[nextIndex], next[index]];
-    onChange('order', next.join(','));
-  };
   const toggleRotation = (id: string) => {
     const next = { ...rotations, [id]: ((rotations[id] ?? 0) + 90) % 360 };
     setRotations(next);
@@ -31,28 +24,27 @@ function Settings({ items, settings, onChange }: ToolSettingsProps) {
         <div><h2 className="font-semibold">Arrange pages</h2><p className="text-sm text-muted">Reorder files before merging.</p></div>
         <span className="text-sm text-muted">{items.length} files</span>
       </div>
-      <div className="mt-4 space-y-3">
-        {ids.map((id, index) => {
-          const item = items.find((candidate) => candidate.id === id);
-          if (!item) return null;
-          return (
-            <div key={id} draggable onDragStart={(event) => event.dataTransfer.setData('text/plain', id)} onDragOver={(event) => event.preventDefault()} onDrop={(event) => {
-              const dragged = event.dataTransfer.getData('text/plain');
-              const from = ids.indexOf(dragged);
-              const to = ids.indexOf(id);
-              if (from < 0 || to < 0 || from === to) return;
-              const next = [...ids];
-              next.splice(to, 0, ...next.splice(from, 1));
-              onChange('order', next.join(','));
-            }} className="flex flex-wrap items-center gap-3 rounded-xl border border-subtle p-3">
-              <PdfPreview file={item.file} compact />
-              <span className="min-w-0 flex-1 truncate font-semibold">{item.file.name}</span>
-              <Button className="border border-subtle px-3 text-sm" aria-label={`Move ${item.file.name} up`} onClick={() => move(id, -1)} disabled={index === 0}>↑</Button>
-              <Button className="border border-subtle px-3 text-sm" aria-label={`Move ${item.file.name} down`} onClick={() => move(id, 1)} disabled={index === ids.length - 1}>↓</Button>
-              <Button className="border border-subtle text-sm" onClick={() => toggleRotation(id)}>Rotate {rotations[id] ?? 0}°</Button>
-            </div>
-          );
-        })}
+      <div className="mt-4">
+        <SortableList
+          items={ids.map((id) => ({ id }))}
+          onReorder={(from, to) => {
+            if (to < 0 || to >= ids.length) return;
+            const next = [...ids];
+            [next[from], next[to]] = [next[to], next[from]];
+            onChange('order', next.join(','));
+          }}
+          renderItem={({ id }) => {
+            const item = items.find((candidate) => candidate.id === id);
+            if (!item) return null;
+            return (
+              <div className="flex flex-wrap items-center gap-3 p-3">
+                <PdfPreview file={item.file} compact />
+                <span className="min-w-0 flex-1 truncate font-semibold">{item.file.name}</span>
+                <Button className="border border-subtle text-sm" onClick={() => toggleRotation(id)}>Rotate {rotations[id] ?? 0}°</Button>
+              </div>
+            );
+          }}
+        />
       </div>
     </Card>
   );

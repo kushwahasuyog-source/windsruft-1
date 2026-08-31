@@ -117,6 +117,17 @@ export const apiClient = {
   pdfToPpt: (file: File, config?: Pick<AxiosRequestConfig, 'onUploadProgress' | 'signal'>) => upload('/api/convert/pdf-to-ppt', [file], {}, 'file', config),
   pdfToExcel: (file: File, config?: Pick<AxiosRequestConfig, 'onUploadProgress' | 'signal'>) => upload('/api/convert/pdf-to-excel', [file], {}, 'file', config),
   pdfToPdfa: (file: File, config?: Pick<AxiosRequestConfig, 'onUploadProgress' | 'signal'>) => upload('/api/convert/pdf-to-pdfa', [file], {}, 'file', config),
+  sign: (file: File, options: Record<string, string | number>, image: File | undefined, config?: Pick<AxiosRequestConfig, 'onUploadProgress' | 'signal'>) =>
+    uploadMultipart('/api/pdf/sign', [{ name: 'files', file }, ...(image ? [{ name: 'files', file: image }] : [])], options as Record<string, string>, config),
+  redact: (file: File, options: Record<string, string>, config?: Pick<AxiosRequestConfig, 'onUploadProgress' | 'signal'>) => upload('/api/pdf/redact', [file], options, 'file', config),
+  edit: (file: File, options: Record<string, string>, images: File[], config?: Pick<AxiosRequestConfig, 'onUploadProgress' | 'signal'>) =>
+    uploadMultipart('/api/pdf/edit', [{ name: 'files', file }, ...images.map((image) => ({ name: 'files', file: image }))], options, config),
+  forms: (file: File, options: Record<string, string>, config?: Pick<AxiosRequestConfig, 'onUploadProgress' | 'signal'>) => upload('/api/pdf/forms', [file], options, 'file', config),
+  markdown: (file: File, config?: Pick<AxiosRequestConfig, 'onUploadProgress' | 'signal'>) => upload('/api/pdf/to-markdown', [file], {}, 'file', config),
+  summarize: (file: File, length: string, config?: Pick<AxiosRequestConfig, 'onUploadProgress' | 'signal'>) => upload('/api/ai/summarize', [file], { length }, 'file', config),
+  translate: (file: File, options: Record<string, string>, config?: Pick<AxiosRequestConfig, 'onUploadProgress' | 'signal'>) => upload('/api/ai/translate', [file], options, 'file', config),
+  compare: (files: File[], config?: Pick<AxiosRequestConfig, 'onUploadProgress' | 'signal'>) =>
+    upload('/api/pdf/compare', files, {}, 'files', config),
   pageInfo: async (file: File) => {
     const body = new FormData();
     body.append('file', file);

@@ -27,6 +27,12 @@ export async function loadToolModule(slug: string): Promise<ToolModule | undefin
       case 'pdf-to-pdfa': return (await import('./pdf-to-pdfa')).default;
       case 'repair-pdf': return (await import('./repair-pdf')).default;
       case 'ocr-pdf': return (await import('./ocr-pdf')).default;
+      case 'sign-pdf': return (await import('./sign-pdf')).default;
+      case 'redact-pdf': return (await import('./redact-pdf')).default;
+      case 'edit-pdf': return (await import('./edit-pdf')).default;
+      case 'pdf-forms': return (await import('./pdf-forms')).default;
+      case 'compare-pdf': return (await import('./compare-pdf')).default;
+      case 'pdf-to-markdown': return (await import('./pdf-to-markdown')).default;
     default: return undefined;
   }
 }

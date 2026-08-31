@@ -14,6 +14,7 @@ interface Capabilities {
   chrome?: boolean;
   poppler?: boolean;
   ghostscript?: boolean;
+  ai?: boolean;
 }
 
 const requirements: Record<string, { keys: Array<keyof Capabilities>; message: string }> = {
@@ -25,6 +26,9 @@ const requirements: Record<string, { keys: Array<keyof Capabilities>; message: s
   'pdf-to-jpg': { keys: ['poppler', 'ghostscript'], message: 'No page rendering engine (Poppler or Ghostscript) is available on this deployment.' },
   'pdf-to-powerpoint': { keys: ['poppler', 'ghostscript'], message: 'No page rendering engine (Poppler or Ghostscript) is available on this deployment.' },
   'pdf-to-pdfa': { keys: ['ghostscript'], message: 'Ghostscript is required for PDF/A conversion and is not available on this deployment.' },
+  'redact-pdf': { keys: ['poppler'], message: 'Poppler is required to locate and flatten redacted pages.' },
+  'ai-summarizer': { keys: ['ai'], message: 'AI provider is not configured. Set AI_PROVIDER, AI_API_KEY, AI_BASE_URL, and AI_MODEL on the server.' },
+  'translate-pdf': { keys: ['ai'], message: 'AI provider is not configured. Set AI_PROVIDER, AI_API_KEY, AI_BASE_URL, and AI_MODEL on the server.' },
 };
 
 export function ToolPageLayout({
@@ -108,7 +112,10 @@ export function ToolPageLayout({
   const retry = (id: string) => {
     if (request) void queue.retry(id, request.operation, request.options as QueueOptions);
   };
-  const invalid = Boolean(settings.rangeError) || (tool.slug === 'merge-pdf' && queue.items.length < 2);
+  const invalid = Boolean(settings.rangeError)
+    || (tool.slug === 'merge-pdf' && queue.items.length < 2)
+    || (tool.slug === 'compare-pdf' && queue.items.length !== 2)
+    || (tool.slug === 'redact-pdf' && settings.confirmed !== true);
   const requirement = requirements[tool.slug];
   const unavailable = Boolean(requirement && capabilities && !requirement.keys.some((key) => capabilities[key]));
   const contentMode = tool.slug === 'html-to-pdf' && settings.mode !== 'file';
@@ -123,8 +130,8 @@ export function ToolPageLayout({
       </header>
       {tool.status === 'planned' ? (
         <Card className="mx-auto max-w-2xl border-accent/30 text-center">
-          <p className="text-lg font-bold">{tool.slug === 'ocr-pdf' && capabilities && !capabilities.ocr ? 'OCR is not configured on this deployment.' : 'This tool is coming in a later phase.'}</p>
-          <p className="mt-2 text-secondary">{tool.slug === 'ocr-pdf' && capabilities && !capabilities.ocr ? 'The server needs cached Tesseract language data before it can create a searchable text layer.' : 'The workspace shell is ready; processing will arrive in a later phase.'}</p>
+          <p className="text-lg font-bold">{tool.slug === 'ocr-pdf' && capabilities && !capabilities.ocr ? 'OCR is not configured on this deployment.' : tool.slug === 'ai-summarizer' || tool.slug === 'translate-pdf' ? 'AI provider is not configured on this deployment.' : 'This tool is coming in a later phase.'}</p>
+          <p className="mt-2 text-secondary">{tool.slug === 'ocr-pdf' && capabilities && !capabilities.ocr ? 'The server needs cached Tesseract language data before it can create a searchable text layer.' : tool.slug === 'ai-summarizer' || tool.slug === 'translate-pdf' ? 'Set AI_PROVIDER, AI_API_KEY, AI_BASE_URL, and AI_MODEL on the server to enable this workflow.' : 'The workspace shell is ready; processing will arrive in a later phase.'}</p>
         </Card>
       ) : (
         <>
@@ -156,7 +163,7 @@ export function ToolPageLayout({
               <Button className="border border-subtle" onClick={queue.clear}>Start over</Button>
             </div>
           )}
-          {invalid && <p className="mt-3 text-center text-sm text-danger">{tool.slug === 'merge-pdf' ? 'Add at least two PDF files to merge.' : typeof settings.rangeError === 'string' ? settings.rangeError : 'Check the selected settings.'}</p>}
+          {invalid && <p className="mt-3 text-center text-sm text-danger">{tool.slug === 'merge-pdf' ? 'Add at least two PDF files to merge.' : tool.slug === 'compare-pdf' ? 'Add exactly two PDF files to compare.' : tool.slug === 'redact-pdf' ? 'Confirm the irreversible redaction action before continuing.' : typeof settings.rangeError === 'string' ? settings.rangeError : 'Check the selected settings.'}</p>}
           <p className="mt-8 text-center text-sm text-muted">Your files are automatically deleted after processing.</p>
         </>
       )}

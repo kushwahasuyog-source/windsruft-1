@@ -91,6 +91,16 @@ export function useFileQueue() {
     if (tool === 'pdf-to-powerpoint') return apiClient.pdfToPpt(item.file, config);
     if (tool === 'pdf-to-excel') return apiClient.pdfToExcel(item.file, config);
     if (tool === 'pdf-to-pdfa') return apiClient.pdfToPdfa(item.file, config);
+    if (tool === 'sign') return apiClient.sign(item.file, {
+      page: String(options.page ?? 1), x: String(options.x ?? 72), y: String(options.y ?? 72), width: String(options.width ?? 180), height: String(options.height ?? 60),
+      kind: String(options.kind ?? 'text'), text: String(options.text ?? ''), fontFamily: String(options.fontFamily ?? 'Helvetica'), fontSize: String(options.fontSize ?? 24),
+    }, options.imageFile instanceof File ? options.imageFile : undefined, config);
+    if (tool === 'redact') return apiClient.redact(item.file, { boxes: String(options.boxes ?? '[]'), searchText: String(options.searchText ?? ''), matchCase: String(options.matchCase ?? false) }, config);
+    if (tool === 'edit') return apiClient.edit(item.file, { ops: String(options.ops ?? '[]') }, options.imageFiles instanceof File ? [options.imageFiles] : [], config);
+    if (tool === 'forms') return apiClient.forms(item.file, { mode: String(options.mode ?? 'fill'), values: String(options.values ?? '{}'), fields: String(options.fields ?? '[]'), flatten: String(options.flatten ?? false) }, config);
+    if (tool === 'markdown') return apiClient.markdown(item.file, config);
+    if (tool === 'summarize') return apiClient.summarize(item.file, String(options.length ?? 'medium'), config);
+    if (tool === 'translate') return apiClient.translate(item.file, { sourceLanguage: String(options.sourceLanguage ?? 'auto'), targetLanguage: String(options.targetLanguage ?? 'English') }, config);
     if (tool === 'html-to-pdf') return apiClient.htmlToPdf({
       mode: options.mode === 'file' ? 'html' : String(options.mode ?? 'html'),
       html: String(options.html ?? ''),
@@ -171,6 +181,19 @@ export function useFileQueue() {
           currentItems.forEach((item) => update(item.id, { status: 'COMPLETED', progress: 100, result }));
         } catch (error) {
           const message = error instanceof ApiClientError ? error.message : 'Something went wrong while processing your file. Please try again.';
+          currentItems.forEach((item) => update(item.id, { status: 'FAILED', error: message }));
+        }
+      } else if (tool === 'compare') {
+        try {
+          if (currentItems.length !== 2) throw new Error('Select exactly two PDFs.');
+          currentItems.forEach((item) => update(item.id, { status: 'PROCESSING', progress: 0, error: undefined }));
+          const result = await apiClient.compare(currentItems.map((item) => item.file), {
+            signal: abortController.signal,
+            onUploadProgress: (event) => currentItems.forEach((item) => update(item.id, { progress: event.total ? Math.round((event.loaded / event.total) * 100) : 0 })),
+          });
+          currentItems.forEach((item) => update(item.id, { status: 'COMPLETED', progress: 100, result }));
+        } catch (error) {
+          const message = error instanceof ApiClientError ? error.message : error instanceof Error ? error.message : 'Something went wrong while comparing the PDFs.';
           currentItems.forEach((item) => update(item.id, { status: 'FAILED', error: message }));
         }
       } else {

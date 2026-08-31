@@ -114,6 +114,12 @@ const readySlugs = new Set([
   'pdf-to-excel',
   'pdf-to-pdfa',
   'ocr-pdf',
+  'sign-pdf',
+  'redact-pdf',
+  'edit-pdf',
+  'pdf-forms',
+  'compare-pdf',
+  'pdf-to-markdown',
 ]);
 export const toolRegistry: ToolDefinition[] = specs.map(([slug, name, description, category, accepts, multiple, icon]) => ({
   slug,

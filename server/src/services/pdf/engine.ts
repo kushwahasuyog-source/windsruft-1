@@ -14,6 +14,23 @@ const settings: Record<CompressionLevel, string> = {
   high: '/screen',
 };
 
+const downsampling: Record<CompressionLevel, string[]> = {
+  low: [
+    '-dDownsampleColorImages=true',
+    '-dColorImageResolution=180',
+    '-dDownsampleGrayImages=true',
+    '-dGrayImageResolution=180',
+    '-dDownsampleMonoImages=true',
+    '-dMonoImageResolution=180',
+  ],
+  recommended: [],
+  high: [
+    '-dAutoFilterColorImages=false',
+    '-dColorImageFilter=/DCTEncode',
+    '-dJPEGQ=40',
+  ],
+};
+
 export interface CompressionEngine {
   compress(input: string, output: string, level: CompressionLevel): Promise<'ghostscript' | 'pdf-lib'>;
 }
@@ -28,6 +45,7 @@ export const compressionEngine: CompressionEngine = {
           '-dCompatibilityLevel=1.5',
           '-dDetectDuplicateImages=true',
           `-dPDFSETTINGS=${settings[level]}`,
+          ...downsampling[level],
           '-dNOPAUSE',
           '-dBATCH',
           '-dQUIET',

@@ -36,7 +36,15 @@ export interface ToolRequest {
     | 'pdf-to-word'
     | 'pdf-to-ppt'
     | 'pdf-to-excel'
-    | 'pdf-to-pdfa';
+    | 'pdf-to-pdfa'
+    | 'sign'
+    | 'redact'
+    | 'edit'
+    | 'forms'
+    | 'markdown'
+    | 'summarize'
+    | 'translate'
+    | 'compare';
   options: ToolSettings;
 }
 
