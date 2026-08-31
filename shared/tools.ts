@@ -88,7 +88,20 @@ const specs: Array<[string, string, string, ToolCategory, AcceptedType[], boolea
   ['pdf-to-markdown', 'PDF to Markdown', 'Turn PDF structure into clean Markdown.', 'PDF INTELLIGENCE', ['pdf'], false, 'markdown'],
 ];
 
-const readySlugs = new Set(['compress-pdf', 'merge-pdf', 'split-pdf', 'rotate-pdf']);
+const readySlugs = new Set([
+  'compress-pdf',
+  'merge-pdf',
+  'split-pdf',
+  'rotate-pdf',
+  'remove-pages',
+  'extract-pages',
+  'organize-pdf',
+  'add-page-numbers',
+  'add-watermark',
+  'crop-pdf',
+  'unlock-pdf',
+  'protect-pdf',
+]);
 export const toolRegistry: ToolDefinition[] = specs.map(([slug, name, description, category, accepts, multiple, icon]) => ({
   slug,
   name,

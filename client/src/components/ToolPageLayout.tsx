@@ -4,7 +4,7 @@ import { FileDropzone } from './FileDropzone';
 import { FileList } from './FileList';
 import { useFileQueue, type QueueOptions } from '../hooks/useFileQueue';
 import { loadToolModule } from '../tools/loader';
-import type { ToolModule, ToolSettings } from '../tools/types';
+import type { ToolModule, ToolSetting, ToolSettings } from '../tools/types';
 import { addHistory } from '../services/history';
 import { Button, Card, Spinner } from './ui/Primitives';
 
@@ -50,7 +50,7 @@ export function ToolPageLayout({
       });
     });
   }, [queue.items, tool.name]);
-  const updateSetting = useCallback((key: string, value: string | number) => setSettings((current) => {
+  const updateSetting = useCallback((key: string, value: ToolSetting) => setSettings((current) => {
     if (current[key] === value) return current;
     return { ...current, [key]: value };
   }), []);
@@ -89,7 +89,7 @@ export function ToolPageLayout({
               <Button className="border border-subtle" onClick={queue.clear}>Start over</Button>
             </div>
           )}
-          {invalid && <p className="mt-3 text-center text-sm text-danger">{tool.slug === 'merge-pdf' ? 'Add at least two PDF files to merge.' : settings.rangeError}</p>}
+          {invalid && <p className="mt-3 text-center text-sm text-danger">{tool.slug === 'merge-pdf' ? 'Add at least two PDF files to merge.' : typeof settings.rangeError === 'string' ? settings.rangeError : 'Check the selected settings.'}</p>}
           <p className="mt-8 text-center text-sm text-muted">Your files are automatically deleted after processing.</p>
         </>
       )}

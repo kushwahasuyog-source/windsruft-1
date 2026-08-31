@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import type { ReactNode } from 'react';
 import type { PDFDocumentProxy, PDFPageProxy, RenderTask } from 'pdfjs-dist';
 import { Button, Card, Spinner } from './ui/Primitives';
 
@@ -11,6 +12,7 @@ export interface PdfPreviewProps {
   rotation?: number;
   onPageCount?: (pages: number) => void;
   compact?: boolean;
+  overlay?: (info: { scale: number; width: number; height: number; page: number }) => ReactNode;
 }
 
 async function loadDocument(file: File | undefined, source: string | undefined): Promise<PDFDocumentProxy> {
@@ -50,7 +52,7 @@ function Thumbnail({
   pageNumber: number;
   selected: boolean;
   selectable: boolean;
-  onSelect: () => void;
+  onSelect: (extend: boolean) => void;
   onOpen: () => void;
 }) {
   const canvas = useRef<HTMLCanvasElement>(null);
@@ -80,9 +82,10 @@ function Thumbnail({
     <button
       type="button"
       className={`relative shrink-0 rounded-lg border p-1 text-left transition ${selected ? 'border-accent ring-2 ring-accent' : 'border-subtle hover:border-accent'}`}
-      aria-label={`Open page ${pageNumber}`}
+      aria-label={selectable ? `Select page ${pageNumber}` : `Open page ${pageNumber}`}
       aria-pressed={selected}
-      onClick={onOpen}
+      onClick={(event) => (selectable ? onSelect(event.shiftKey) : onOpen())}
+      onDoubleClick={onOpen}
     >
       <canvas ref={canvas} className="block min-h-20 min-w-16 bg-white" />
       {selectable && (
@@ -92,7 +95,7 @@ function Thumbnail({
             tabIndex={-1}
             checked={selected}
             aria-label={`Select page ${pageNumber}`}
-            onChange={onSelect}
+            onChange={() => onSelect(false)}
             onClick={(event) => event.stopPropagation()}
           />
         </span>
@@ -111,18 +114,21 @@ export function PdfPreview({
   rotation = 0,
   onPageCount,
   compact = false,
+  overlay,
 }: PdfPreviewProps) {
   const [document, setDocument] = useState<PDFDocumentProxy>();
   const [page, setPage] = useState(1);
   const [zoom, setZoom] = useState(compact ? 45 : 100);
   const [viewRotation, setViewRotation] = useState(0);
   const [fitScale, setFitScale] = useState(1);
+  const [pageSize, setPageSize] = useState<{ width: number; height: number }>();
   const [error, setError] = useState(false);
   const [loading, setLoading] = useState(true);
   const canvas = useRef<HTMLCanvasElement>(null);
   const task = useRef<RenderTask>();
   const container = useRef<HTMLDivElement>(null);
   const documentRef = useRef<PDFDocumentProxy>();
+  const anchor = useRef<number>();
 
   useEffect(() => {
     if (!file && !source) return undefined;
@@ -163,6 +169,7 @@ export function PdfPreview({
       if (stopped || !canvas.current) return;
       task.current?.cancel();
       const viewport = loadedPage.getViewport({ scale: 1, rotation: rotation + viewRotation });
+      setPageSize({ width: viewport.width, height: viewport.height });
       const availableWidth = container.current?.clientWidth ?? viewport.width;
       const nextFit = Math.max(0.35, (availableWidth - 24) / viewport.width);
       setFitScale(nextFit);
@@ -180,7 +187,15 @@ export function PdfPreview({
   if (loading || !document) return <Card className="mt-6 flex min-h-40 items-center justify-center"><Spinner /></Card>;
 
   const effectiveZoom = zoom === 0 ? Math.round(fitScale * 100) : zoom;
-  const togglePage = (pageNumber: number) => {
+  const togglePage = (pageNumber: number, extend: boolean) => {
+    if (extend && anchor.current) {
+      const start = Math.min(anchor.current, pageNumber);
+      const end = Math.max(anchor.current, pageNumber);
+      const range = Array.from({ length: end - start + 1 }, (_value, index) => start + index);
+      onSelectionChange?.(Array.from(new Set([...selected, ...range])).sort((a, b) => a - b));
+      return;
+    }
+    anchor.current = pageNumber;
     const next = selected.includes(pageNumber)
       ? selected.filter((value) => value !== pageNumber)
       : [...selected, pageNumber].sort((a, b) => a - b);
@@ -208,7 +223,14 @@ export function PdfPreview({
         </div>
       )}
       <div ref={container} className={`mt-4 overflow-auto rounded-lg bg-sunken p-3 ${compact ? 'max-h-44' : 'max-h-[34rem]'}`}>
-        <canvas ref={canvas} className="mx-auto block bg-white shadow-soft" />
+        <div className="relative mx-auto w-fit">
+          <canvas ref={canvas} className="block bg-white shadow-soft" />
+          {overlay && pageSize && (
+            <div className="absolute inset-0">
+              {overlay({ scale: zoom === 0 ? fitScale : zoom / 100, width: pageSize.width, height: pageSize.height, page })}
+            </div>
+          )}
+        </div>
       </div>
       {!compact && (
         <div className="mt-4 flex gap-3 overflow-x-auto pb-2" aria-label="Page thumbnails">
@@ -219,14 +241,14 @@ export function PdfPreview({
               pageNumber={index + 1}
               selected={selected.includes(index + 1)}
               selectable={selectable}
-              onSelect={() => togglePage(index + 1)}
+              onSelect={(extend) => togglePage(index + 1, extend)}
               onOpen={() => setPage(index + 1)}
             />
           ))}
         </div>
       )}
       {selectable && !compact && (
-        <p className="mt-2 text-sm text-muted">{selected.length ? `${selected.length} page${selected.length === 1 ? '' : 's'} selected` : 'Select pages from the thumbnails.'}</p>
+        <p className="mt-2 text-sm text-muted">{selected.length ? `${selected.length} page${selected.length === 1 ? '' : 's'} selected` : 'Click a thumbnail to select it; shift-click to select a range; double-click to open it.'}</p>
       )}
     </Card>
   );

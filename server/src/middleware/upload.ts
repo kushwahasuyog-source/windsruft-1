@@ -78,7 +78,12 @@ export async function validateUploads(
   request: Request,
   accepted: string[],
 ): Promise<Express.Multer.File[]> {
-  const files = (request.files as Express.Multer.File[] | undefined) ?? (request.file ? [request.file] : []);
+  const uploaded = request.files;
+  const files = Array.isArray(uploaded)
+    ? uploaded
+    : uploaded
+      ? Object.values(uploaded).flat()
+      : request.file ? [request.file] : [];
   if (!files.length) throw new AppError('INVALID_FILE_TYPE', 400, 'Please select a PDF file.');
   for (const file of files) {
     const extension = path.extname(file.originalname).slice(1).toLowerCase();

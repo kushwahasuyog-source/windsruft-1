@@ -12,7 +12,7 @@ export interface QueueItem {
   result?: JobResponse;
 }
 
-export type QueueOptions = Record<string, string | number>;
+export type QueueOptions = Record<string, string | number | boolean | File>;
 
 function makeId(file: File): string {
   return `${file.name}:${file.size}:${file.lastModified}:${Math.random().toString(36).slice(2)}`;
@@ -52,6 +52,22 @@ export function useFileQueue() {
     if (tool === 'compress') return apiClient.compress([item.file], String(options.level ?? 'recommended'), config);
     if (tool === 'split') return apiClient.split(item.file, String(options.mode ?? 'every-page'), String(options.ranges ?? ''), config);
     if (tool === 'rotate') return apiClient.rotate(item.file, String(options.pages ?? 'all'), Number(options.angle ?? 90), config);
+    if (tool === 'remove-pages') return apiClient.removePages(item.file, String(options.pages ?? '[]'), config);
+    if (tool === 'extract-pages') return apiClient.extractPages(item.file, String(options.pages ?? '[]'), String(options.ranges ?? ''), config);
+    if (tool === 'organize') return apiClient.organize(item.file, String(options.ops ?? '[]'), config);
+    if (tool === 'page-numbers') return apiClient.pageNumbers(item.file, {
+      position: String(options.position ?? 'bottom-center'),
+      format: String(options.format ?? 'Page 1 of 10'),
+      fontFamily: String(options.fontFamily ?? 'Helvetica'),
+      fontSize: Number(options.fontSize ?? 12),
+      color: String(options.color ?? '#111827'),
+      startNumber: Number(options.startNumber ?? 1),
+      pages: String(options.pages ?? 'all'),
+    }, config);
+    if (tool === 'watermark') return apiClient.watermark(item.file, options as Record<string, string | number | boolean>, config);
+    if (tool === 'crop') return apiClient.crop(item.file, String(options.box ?? '{}'), String(options.applyTo ?? 'page'), Number(options.page ?? 1), config);
+    if (tool === 'protect') return apiClient.protect(item.file, options as Record<string, string | number | boolean>, config);
+    if (tool === 'unlock') return apiClient.unlock(item.file, String(options.password ?? ''), config);
     throw new Error('Unsupported PDF operation.');
   }, [update]);
 
