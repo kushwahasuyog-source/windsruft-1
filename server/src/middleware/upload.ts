@@ -68,6 +68,9 @@ export function uploadFactory(accepted: string[], multiple: boolean): multer.Mul
 }
 
 function matchesSignature(buffer: Buffer, kind: string): boolean {
+  if (kind === 'html') {
+    return buffer.toString('utf8').replace(/^\uFEFF/, '').trimStart().startsWith('<');
+  }
   return (signatures[kind] ?? []).some((signature) => buffer.subarray(0, signature.length).equals(signature));
 }
 

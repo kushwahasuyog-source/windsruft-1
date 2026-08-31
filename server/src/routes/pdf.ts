@@ -7,7 +7,7 @@ import { z } from 'zod';
 import { AppError } from '../errors';
 import { sanitizeFilename, uploadFactory, validateUploads } from '../middleware/upload';
 import { compressPdf, mergePdfs, pageInfo, rotatePdf, splitPdf } from '../services/pdf/engine';
-import { createWorkspace } from '../services/storage/workspace';
+import { createWorkspace, registerResult } from '../services/storage/workspace';
 
 const router = Router();
 const manyPdfs = uploadFactory(['pdf'], true);
@@ -28,9 +28,11 @@ router.post('/compress', manyPdfs.array('files'), async (request, response, next
       const fileId = crypto.randomUUID();
       const output = path.join(workspace.directory, fileId);
       const result = await compressPdf(file.path, output, level);
+      const name = `${path.basename(sanitizeFilename(file.originalname), path.extname(file.originalname))}-compressed.pdf`;
+      await registerResult(workspace.directory, fileId, name);
       results.push({
         fileId,
-        name: sanitizeFilename(file.originalname),
+        name,
         downloadUrl: `/api/files/${workspace.jobId}/${fileId}`,
         ...result,
       });
@@ -48,12 +50,17 @@ router.post('/merge', manyPdfs.array('files'), async (request, response, next) =
     const order = request.body.order
       ? z.array(z.number().int().nonnegative()).parse(JSON.parse(request.body.order))
       : files.map((_file, index) => index);
+    const rotations = request.body.rotations
+      ? z.array(z.union([z.literal(0), z.literal(90), z.literal(180), z.literal(270)])).parse(JSON.parse(request.body.rotations))
+      : files.map(() => 0);
     if (order.length !== files.length || new Set(order).size !== files.length || order.some((index) => index >= files.length)) {
       throw new AppError('PROCESSING_FAILED', 400, 'Invalid file order.');
     }
+    if (rotations.length !== files.length) throw new AppError('PROCESSING_FAILED', 400, 'Invalid file rotations.');
     const workspace = await createWorkspace();
     const fileId = crypto.randomUUID();
-    await mergePdfs(order.map((index) => files[index].path), path.join(workspace.directory, fileId));
+    await mergePdfs(order.map((index) => files[index].path), path.join(workspace.directory, fileId), order.map((index) => rotations[index]));
+    await registerResult(workspace.directory, fileId, 'merged.pdf');
     response.json(fileResponse(workspace.jobId, [{
       fileId,
       name: 'merged.pdf',
@@ -76,6 +83,7 @@ router.post('/rotate', onePdf.single('file'), async (request, response, next) =>
     const workspace = await createWorkspace();
     const fileId = crypto.randomUUID();
     await rotatePdf(file.path, path.join(workspace.directory, fileId), selected, angle);
+    await registerResult(workspace.directory, fileId, 'rotated.pdf');
     response.json(fileResponse(workspace.jobId, [{
       fileId,
       name: 'rotated.pdf',
@@ -126,15 +134,27 @@ router.post('/split', onePdf.single('file'), async (request, response, next) => 
       zipStream.on('close', () => resolve());
       zipStream.on('error', reject);
     });
+    const baseName = path.basename(sanitizeFilename(file.originalname), path.extname(file.originalname));
+    await registerResult(workspace.directory, zipId, `${baseName}-split.zip`);
+    for (const [index, splitFile] of splitFiles.entries()) await registerResult(workspace.directory, splitFile.id, `${baseName}-${index + 1}.pdf`);
     response.json(fileResponse(
       workspace.jobId,
-      splitFiles.map((splitFile) => ({
+      splitFiles.map((splitFile, index) => ({
         fileId: splitFile.id,
-        name: splitFile.name,
+        name: `${baseName}-${index + 1}.pdf`,
         downloadUrl: `/api/files/${workspace.jobId}/${splitFile.id}`,
       })),
       `/api/files/${workspace.jobId}/${zipId}`,
     ));
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/page-info', onePdf.single('file'), async (request, response, next) => {
+  try {
+    const [file] = await validateUploads(request, ['pdf']);
+    response.json(await pageInfo(file.path));
   } catch (error) {
     next(error);
   }

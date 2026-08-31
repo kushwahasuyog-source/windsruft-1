@@ -84,12 +84,16 @@ export async function compressPdf(
   };
 }
 
-export async function mergePdfs(inputs: string[], output: string): Promise<void> {
+export async function mergePdfs(inputs: string[], output: string, rotations: number[] = []): Promise<void> {
   const merged = await PDFDocument.create();
   for (const input of inputs) {
     const source = await loadPdf(input);
     const pages = await merged.copyPages(source, source.getPageIndices());
-    pages.forEach((page) => merged.addPage(page));
+    pages.forEach((page) => {
+      const sourceIndex = pages.indexOf(page);
+      if (rotations[sourceIndex]) page.setRotation(degrees(rotations[sourceIndex]));
+      merged.addPage(page);
+    });
   }
   await fs.writeFile(output, await merged.save());
 }

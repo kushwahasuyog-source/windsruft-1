@@ -7,6 +7,21 @@ import { AppError } from '../../errors';
 
 const workspaceRoot = path.resolve(process.env.TMP_DIR ?? os.tmpdir(), 'pdfforge');
 const idPattern = /^[a-f0-9-]{36}$/i;
+const manifestName = '.manifest.json';
+
+async function readManifest(directory: string): Promise<Record<string, string>> {
+  try {
+    return JSON.parse(await fs.readFile(path.join(directory, manifestName), 'utf8')) as Record<string, string>;
+  } catch {
+    return {};
+  }
+}
+
+export async function registerResult(directory: string, fileId: string, displayName: string): Promise<void> {
+  const manifest = await readManifest(directory);
+  manifest[fileId] = displayName;
+  await fs.writeFile(path.join(directory, manifestName), JSON.stringify(manifest));
+}
 
 export async function createWorkspace(): Promise<{ jobId: string; directory: string }> {
   const jobId = crypto.randomUUID();
@@ -54,10 +69,12 @@ export async function serveFile(
     await handle.read(header, 0, 4, 0);
     await handle.close();
     const isZip = header[0] === 0x50 && header[1] === 0x4b;
+    const manifest = await readManifest(path.dirname(resolved));
+    const displayName = manifest[fileId] ?? (isZip ? 'pdfforge-files.zip' : 'pdfforge-file.pdf');
     response.type(isZip ? 'zip' : 'application/pdf');
     response.setHeader(
       'Content-Disposition',
-      `${inline ? 'inline' : 'attachment'}; filename="${isZip ? 'pdfforge-files.zip' : 'pdfforge-file.pdf'}"`,
+      `${inline ? 'inline' : 'attachment'}; filename="${displayName.replace(/"/g, '')}"`,
     );
     response.sendFile(resolved);
   } catch {
