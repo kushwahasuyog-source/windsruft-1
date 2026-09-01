@@ -33,6 +33,8 @@ export async function loadToolModule(slug: string): Promise<ToolModule | undefin
       case 'pdf-forms': return (await import('./pdf-forms')).default;
       case 'compare-pdf': return (await import('./compare-pdf')).default;
       case 'pdf-to-markdown': return (await import('./pdf-to-markdown')).default;
+      case 'ai-summarizer': return (await import('./ai-summarizer')).default;
+      case 'translate-pdf': return (await import('./translate-pdf')).default;
     default: return undefined;
   }
 }

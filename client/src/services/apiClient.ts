@@ -120,6 +120,10 @@ export const apiClient = {
   sign: (file: File, options: Record<string, string | number>, image: File | undefined, config?: Pick<AxiosRequestConfig, 'onUploadProgress' | 'signal'>) =>
     uploadMultipart('/api/pdf/sign', [{ name: 'files', file }, ...(image ? [{ name: 'files', file: image }] : [])], options as Record<string, string>, config),
   redact: (file: File, options: Record<string, string>, config?: Pick<AxiosRequestConfig, 'onUploadProgress' | 'signal'>) => upload('/api/pdf/redact', [file], options, 'file', config),
+  redactMatches: async (file: File, searchText: string, matchCase: boolean) => {
+    const body = new FormData(); body.append('file', file); body.append('searchText', searchText); body.append('matchCase', String(matchCase));
+    try { return (await axios.post<{ boxes: Array<{ page: number; x: number; y: number; width: number; height: number }> }>('/api/pdf/redact/matches', body)).data; } catch (error) { return normalizeError(error); }
+  },
   edit: (file: File, options: Record<string, string>, images: File[], config?: Pick<AxiosRequestConfig, 'onUploadProgress' | 'signal'>) =>
     uploadMultipart('/api/pdf/edit', [{ name: 'files', file }, ...images.map((image) => ({ name: 'files', file: image }))], options, config),
   forms: (file: File, options: Record<string, string>, config?: Pick<AxiosRequestConfig, 'onUploadProgress' | 'signal'>) => upload('/api/pdf/forms', [file], options, 'file', config),

@@ -6,6 +6,8 @@ import { Button, Card, Spinner } from './ui/Primitives';
 export interface PdfPreviewProps {
   file?: File;
   source?: string;
+  page?: number;
+  onPageChange?: (page: number) => void;
   selectable?: boolean;
   selected?: number[];
   onSelectionChange?: (pages: number[]) => void;
@@ -108,6 +110,8 @@ function Thumbnail({
 export function PdfPreview({
   file,
   source,
+  page: controlledPage,
+  onPageChange,
   selectable = false,
   selected = [],
   onSelectionChange,
@@ -117,7 +121,7 @@ export function PdfPreview({
   overlay,
 }: PdfPreviewProps) {
   const [document, setDocument] = useState<PDFDocumentProxy>();
-  const [page, setPage] = useState(1);
+  const [internalPage, setInternalPage] = useState(1);
   const [zoom, setZoom] = useState(compact ? 45 : 100);
   const [viewRotation, setViewRotation] = useState(0);
   const [fitScale, setFitScale] = useState(1);
@@ -129,6 +133,12 @@ export function PdfPreview({
   const container = useRef<HTMLDivElement>(null);
   const documentRef = useRef<PDFDocumentProxy>();
   const anchor = useRef<number>();
+  const page = controlledPage ?? internalPage;
+  const setPage = (next: number | ((value: number) => number)) => {
+    const resolved = typeof next === 'function' ? next(page) : next;
+    setInternalPage(resolved);
+    onPageChange?.(resolved);
+  };
 
   useEffect(() => {
     if (!file && !source) return undefined;

@@ -36,7 +36,7 @@ export async function signPdf(input: string, output: string, options: SignatureO
 }
 
 export interface RedactionBox { page: number; x: number; y: number; width: number; height: number }
-async function searchBoxes(input: string, searchText: string, matchCase: boolean): Promise<RedactionBox[]> {
+export async function findRedactionBoxes(input: string, searchText: string, matchCase: boolean): Promise<RedactionBox[]> {
   const words = await positionedText(input);
   const targetWords = (matchCase ? searchText : searchText.toLowerCase()).split(/\s+/).filter(Boolean);
   const byPage = new Map<number, PositionedWord[]>();
@@ -63,7 +63,7 @@ async function flattenPage(input: string, output: string, pageValue: number, box
   await sharp(rendered.path).composite([{ input: Buffer.from(svg) }]).png().toFile(output);
 }
 export async function redactPdf(input: string, output: string, workspace: string, suppliedBoxes: RedactionBox[], searchText?: string, matchCase = false): Promise<void> {
-  const document = await PDFDocument.load(await fs.readFile(input)); const boxes = [...suppliedBoxes, ...(searchText ? await searchBoxes(input, searchText, matchCase) : [])];
+  const document = await PDFDocument.load(await fs.readFile(input)); const boxes = [...suppliedBoxes, ...(searchText ? await findRedactionBoxes(input, searchText, matchCase) : [])];
   if (!boxes.length) throw new AppError('PROCESSING_FAILED', 400, 'Add a redaction box or text to find.');
   boxes.forEach((box) => pageNumber(box.page, document.getPageCount()));
   const byPage = new Map<number, RedactionBox[]>(); boxes.forEach((box) => byPage.set(box.page, [...(byPage.get(box.page) ?? []), box]));
@@ -78,7 +78,7 @@ export async function redactPdf(input: string, output: string, workspace: string
   await fs.writeFile(output, await result.save());
 }
 
-export interface EditOp { page: number; kind: 'text' | 'draw' | 'highlight' | 'rect' | 'ellipse' | 'image'; x?: number; y?: number; width?: number; height?: number; text?: string; color?: string; strokeWidth?: number; fontFamily?: FontName; fontSize?: number; points?: Array<{ x: number; y: number }>; rotation?: number }
+export interface EditOp { page: number; kind: 'text' | 'draw' | 'highlight' | 'rect' | 'ellipse' | 'image'; x?: number; y?: number; width?: number; height?: number; text?: string; color?: string; strokeWidth?: number; fontFamily?: FontName; fontSize?: number; points?: Array<{ x: number; y: number }>; rotation?: number; imageIndex?: number }
 export async function editPdf(input: string, output: string, ops: EditOp[], imagePaths: Record<number, string> = {}): Promise<void> {
   const document = await PDFDocument.load(await fs.readFile(input)); const embeddedFonts = new Map<FontName, Awaited<ReturnType<typeof document.embedFont>>>();
   for (let opIndex = 0; opIndex < ops.length; opIndex += 1) {
@@ -94,7 +94,7 @@ export async function editPdf(input: string, output: string, ops: EditOp[], imag
     } else if (op.kind === 'ellipse') {
       page.drawEllipse({ x: (op.x ?? 0) + (op.width ?? 1) / 2, y: (op.y ?? 0) + (op.height ?? 1) / 2, xScale: (op.width ?? 1) / 2, yScale: (op.height ?? 1) / 2, color: fill, opacity: 0.25, borderColor: fill, borderWidth: op.strokeWidth ?? 1 });
     } else if (op.kind === 'image') {
-      const imagePath = imagePaths[opIndex]; if (!imagePath) throw new AppError('PROCESSING_FAILED', 400, 'Select an image for the image edit.');
+      const imagePath = imagePaths[op.imageIndex ?? opIndex]; if (!imagePath) throw new AppError('PROCESSING_FAILED', 400, 'Select an image for the image edit.');
       const image = imagePath.toLowerCase().endsWith('.png') ? await document.embedPng(await fs.readFile(imagePath)) : await document.embedJpg(await fs.readFile(imagePath));
       page.drawImage(image, { x: op.x ?? 0, y: op.y ?? 0, width: op.width ?? image.width, height: op.height ?? image.height, rotate: degrees(op.rotation ?? 0) });
     }

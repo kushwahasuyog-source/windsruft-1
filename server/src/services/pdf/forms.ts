@@ -15,14 +15,16 @@ export async function inspectForms(input: string): Promise<Array<Record<string, 
 }
 export async function modifyForms(input: string, output: string, values: Record<string, string | boolean>, flatten: boolean, fields: FormFieldInput[]): Promise<void> {
   const document = await PDFDocument.load(await fs.readFile(input)); const form = document.getForm();
-  for (const [name, value] of Object.entries(values)) { const field = form.getField(name); if (field.constructor.name === 'PDFTextField') form.getTextField(name).setText(String(value)); else if (field.constructor.name === 'PDFCheckBox') { if (value) form.getCheckBox(name).check(); else form.getCheckBox(name).uncheck(); } else if (field.constructor.name === 'PDFDropdown') form.getDropdown(name).select(String(value)); }
   for (const field of fields) {
     const page = document.getPages()[field.page - 1]; if (!page) throw new AppError('PROCESSING_FAILED', 400, `Page ${field.page} is outside the document.`);
-    if (field.type === 'text') form.createTextField(field.name).addToPage(page, { x: field.x, y: field.y, width: field.width, height: field.height, borderColor: rgb(0, 0, 0) });
-    else if (field.type === 'checkbox') form.createCheckBox(field.name).addToPage(page, { x: field.x, y: field.y, width: field.width, height: field.height });
-    else if (field.type === 'radio') form.createRadioGroup(field.name).addOptionToPage(field.options?.[0] ?? 'Option 1', page, { x: field.x, y: field.y, width: field.width, height: field.height });
-    else if (field.type === 'dropdown') { const dropdown = form.createDropdown(field.name); dropdown.addOptions(field.options ?? []); dropdown.addToPage(page, { x: field.x, y: field.y, width: field.width, height: field.height }); }
-    else form.createTextField(field.name).addToPage(page, { x: field.x, y: field.y, width: field.width, height: field.height });
+    let existing = true;
+    try { form.getField(field.name); } catch { existing = false; }
+    if (!existing && field.type === 'text') form.createTextField(field.name).addToPage(page, { x: field.x, y: field.y, width: field.width, height: field.height, borderColor: rgb(0, 0, 0) });
+    else if (!existing && field.type === 'checkbox') form.createCheckBox(field.name).addToPage(page, { x: field.x, y: field.y, width: field.width, height: field.height });
+    else if (!existing && field.type === 'radio') form.createRadioGroup(field.name).addOptionToPage(field.options?.[0] ?? 'Option 1', page, { x: field.x, y: field.y, width: field.width, height: field.height });
+    else if (!existing && field.type === 'dropdown') { const dropdown = form.createDropdown(field.name); dropdown.addOptions(field.options ?? []); dropdown.addToPage(page, { x: field.x, y: field.y, width: field.width, height: field.height }); }
+    else if (!existing) form.createTextField(field.name).addToPage(page, { x: field.x, y: field.y, width: field.width, height: field.height });
   }
+  for (const [name, value] of Object.entries(values)) { const field = form.getField(name); if (field.constructor.name === 'PDFTextField') form.getTextField(name).setText(String(value)); else if (field.constructor.name === 'PDFCheckBox') { if (value) form.getCheckBox(name).check(); else form.getCheckBox(name).uncheck(); } else if (field.constructor.name === 'PDFDropdown') form.getDropdown(name).select(String(value)); }
   if (flatten) form.flatten(); await fs.writeFile(output, await document.save());
 }

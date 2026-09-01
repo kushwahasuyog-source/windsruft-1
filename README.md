@@ -37,6 +37,8 @@ OCR remains capability-gated until Tesseract language data is configured with `O
 
 See `.env.example` for server ports, upload limits, temporary storage, rate limits, engine paths, AI/OCR settings, OAuth, and JWT configuration. Never place real secrets in source control.
 
+AI Summarizer and Translate PDF stay `planned` until the deployment sets all four AI variables on the server: `AI_PROVIDER`, `AI_API_KEY`, `AI_BASE_URL`, and `AI_MODEL`. The key is read only by the server, is never sent to the browser, and is never logged. Once the four values are set, `/api/capabilities` reports `ai: true` and both workflows run with their existing controls.
+
 ## Privacy
 
 Uploads and generated results live in per-job temporary workspaces and are automatically deleted by the TTL sweeper. Download links expire with those workspaces; dashboard history is local browser history, not cloud storage. No encryption claim is made by this application.

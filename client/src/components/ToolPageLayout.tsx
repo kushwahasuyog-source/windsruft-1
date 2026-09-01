@@ -119,6 +119,7 @@ export function ToolPageLayout({
   const requirement = requirements[tool.slug];
   const unavailable = Boolean(requirement && capabilities && !requirement.keys.some((key) => capabilities[key]));
   const contentMode = tool.slug === 'html-to-pdf' && settings.mode !== 'file';
+  const aiTool = tool.slug === 'ai-summarizer' || tool.slug === 'translate-pdf';
   const showActions = queue.items.length > 0 || contentMode;
   return (
     <main className="mx-auto max-w-shell px-gutter py-section">
@@ -128,13 +129,19 @@ export function ToolPageLayout({
         <p className="mx-auto mt-4 max-w-2xl text-lg text-secondary">{tool.description}</p>
         <p className="mt-3 text-sm text-muted">Accepts {tool.accepts.join(', ')} · Up to 50 MB per file</p>
       </header>
-      {tool.status === 'planned' ? (
+      {tool.status === 'planned' && !aiTool ? (
         <Card className="mx-auto max-w-2xl border-accent/30 text-center">
           <p className="text-lg font-bold">{tool.slug === 'ocr-pdf' && capabilities && !capabilities.ocr ? 'OCR is not configured on this deployment.' : tool.slug === 'ai-summarizer' || tool.slug === 'translate-pdf' ? 'AI provider is not configured on this deployment.' : 'This tool is coming in a later phase.'}</p>
           <p className="mt-2 text-secondary">{tool.slug === 'ocr-pdf' && capabilities && !capabilities.ocr ? 'The server needs cached Tesseract language data before it can create a searchable text layer.' : tool.slug === 'ai-summarizer' || tool.slug === 'translate-pdf' ? 'Set AI_PROVIDER, AI_API_KEY, AI_BASE_URL, and AI_MODEL on the server to enable this workflow.' : 'The workspace shell is ready; processing will arrive in a later phase.'}</p>
         </Card>
       ) : (
         <>
+          {tool.status === 'planned' && aiTool && (
+            <Card className="mb-6 border-accent/30">
+              <p className="font-bold">AI provider is not configured for this deployment.</p>
+              <p className="mt-2 text-secondary">Set AI_PROVIDER, AI_API_KEY, AI_BASE_URL, and AI_MODEL on the server to enable this workflow. Your API key never reaches the browser.</p>
+            </Card>
+          )}
           {unavailable && requirement && (
             <Card className="mb-6 border-danger/40">
               <p className="font-bold">This tool cannot run on this deployment yet.</p>

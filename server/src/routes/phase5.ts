@@ -6,7 +6,7 @@ import { z } from 'zod';
 import { AppError } from '../errors';
 import { uploadFactory, validateUploads } from '../middleware/upload';
 import { createWorkspace, registerResult } from '../services/storage/workspace';
-import { comparePdf, editPdf, markdownFromWords, redactPdf, signPdf } from '../services/pdf/phase5';
+import { comparePdf, editPdf, findRedactionBoxes, markdownFromWords, redactPdf, signPdf } from '../services/pdf/phase5';
 import { inspectForms, modifyForms, type FormFieldInput } from '../services/pdf/forms';
 import { positionedText, plainText } from '../services/pdf/text';
 import { runAi } from '../services/ai';
@@ -55,6 +55,15 @@ router.post('/redact', onePdf.single('file'), async (request, response, next) =>
   } catch (error) { next(error); }
 });
 
+router.post('/redact/matches', onePdf.single('file'), async (request, response, next) => {
+  try {
+    const [file] = await validateUploads(request, ['pdf']);
+    const searchText = z.string().min(1).parse(request.body.searchText);
+    const matchCase = request.body.matchCase === true || request.body.matchCase === 'true';
+    response.json({ boxes: await findRedactionBoxes(file.path, searchText, matchCase) });
+  } catch (error) { next(error); }
+});
+
 router.post('/compare', twoPdfs.array('files'), async (request, response, next) => {
   try {
     const files = await validateUploads(request, ['pdf']); if (files.length !== 2) throw new AppError('PROCESSING_FAILED', 400, 'Select exactly two PDF files.');
@@ -88,7 +97,7 @@ router.post('/edit', editUpload.array('files'), async (request, response, next) 
       page: z.number().int().positive(), kind: z.enum(['text', 'draw', 'highlight', 'rect', 'ellipse', 'image']),
       x: z.number().finite().optional(), y: z.number().finite().optional(), width: z.number().positive().optional(), height: z.number().positive().optional(),
       text: z.string().optional(), color: z.string().optional(), strokeWidth: z.number().positive().optional(), fontFamily: z.enum(['Helvetica', 'Times', 'Courier']).optional(), fontSize: z.number().positive().optional(),
-      points: z.array(z.object({ x: z.number(), y: z.number() })).optional(), rotation: z.number().optional(),
+      points: z.array(z.object({ x: z.number(), y: z.number() })).optional(), rotation: z.number().optional(), imageIndex: z.number().int().nonnegative().optional(),
     })), 'Enter valid edit operations.');
     const images: Record<number, string> = {}; files.filter((file) => file !== pdf).forEach((file, index) => { images[index] = file.path; });
     const workspace = await createWorkspace(); const output = path.join(workspace.directory, 'edited.pdf');
