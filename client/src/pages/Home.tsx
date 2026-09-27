@@ -12,8 +12,8 @@ export function Home() {
   return (
     <main>
       <section className="mx-auto max-w-shell px-gutter py-24 text-center sm:py-32">
-        <p className="mb-4 text-sm font-bold uppercase tracking-widest text-accent">Everything you need to work with PDFs</p>
-        <h1 className="font-display text-5xl font-black tracking-tight sm:text-7xl">Powerful PDF Tools.<br /><span className="text-accent">One Simple Workspace.</span></h1>
+        <p className="mb-4 text-sm font-bold uppercase tracking-widest text-accent">PDF tools for everyday document work</p>
+        <h1 className="font-display text-5xl font-black tracking-tight sm:text-7xl">PDF tools.<br /><span className="text-accent">One simple workspace.</span></h1>
         <p className="mx-auto mt-6 max-w-2xl text-lg text-secondary">Compress, convert, edit, organize, secure and manage your PDF files in one place.</p>
         <div className="mt-9 flex flex-wrap justify-center gap-3">
           <Button className="bg-accent text-on-accent" onClick={() => picker.current?.click()}>Choose a PDF</Button>
