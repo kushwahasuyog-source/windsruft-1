@@ -171,7 +171,7 @@ export function ToolPageLayout({
             </div>
           )}
           {invalid && <p className="mt-3 text-center text-sm text-danger">{tool.slug === 'merge-pdf' ? 'Add at least two PDF files to merge.' : tool.slug === 'compare-pdf' ? 'Add exactly two PDF files to compare.' : tool.slug === 'redact-pdf' ? 'Confirm the irreversible redaction action before continuing.' : typeof settings.rangeError === 'string' ? settings.rangeError : 'Check the selected settings.'}</p>}
-          <p className="mt-8 text-center text-sm text-muted">Your files are automatically deleted after processing.</p>
+          <p className="mt-8 text-center text-sm text-muted">Temporary files are automatically removed; the default retention period is 30 minutes.</p>
         </>
       )}
     </main>

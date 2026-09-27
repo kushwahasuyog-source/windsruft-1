@@ -58,19 +58,18 @@ export function FileDropzone({
       className="cursor-pointer border-dashed bg-sunken text-center transition hover:border-accent"
       role="button"
       tabIndex={0}
+      aria-label={`Choose ${accepts.join(', ')} files`}
       aria-describedby={descriptionId}
       onClick={() => input.current?.click()}
       onKeyDown={handleKey}
       onDragOver={(event) => event.preventDefault()}
       onDrop={handleDrop}
     >
-      <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-accent-soft text-2xl text-accent">↑</div>
+      <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-accent-soft text-2xl text-accent" aria-hidden="true">↑</div>
       <h3 className="text-lg font-bold">Drop files here or browse</h3>
-      <p id={descriptionId} className="mt-2 text-sm text-muted">
-        Accepted: {accepts.join(', ')} · Up to {maxSizeMb} MB per file
-      </p>
+      <p id={descriptionId} className="mt-2 text-sm text-muted">Accepted: {accepts.join(', ')} · Up to {maxSizeMb} MB per file</p>
       {error && <p className="mt-2 text-sm text-danger" role="alert">{error}</p>}
-      <input ref={input} hidden type="file" accept={acceptValue(accepts)} multiple={multiple} onChange={(event) => addFiles(event.target.files)} />
+      <input ref={input} id={descriptionId + '-input'} name="file" hidden type="file" accept={acceptValue(accepts)} multiple={multiple} onChange={(event) => addFiles(event.target.files)} />
     </Card>
   );
 }
