@@ -1,22 +1,26 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { authService, AuthServiceError } from '../../services/authService';
 import { Button, Card } from '../../components/ui/Primitives';
 
 export function AuthForm({ signup }: { signup: boolean }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+  const [consented, setConsented] = useState(false);
+  const [errors, setErrors] = useState<{ email?: string; password?: string; consent?: string }>({});
   const [notice, setNotice] = useState('');
   const [busy, setBusy] = useState(false);
+
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
     const next = {
       email: /^\S+@\S+\.\S+$/.test(email) ? undefined : 'Enter a valid email address.',
       password: password.length >= 8 ? undefined : 'Use at least 8 characters.',
+      consent: signup && !consented ? 'Please acknowledge the Privacy Policy and Terms & Conditions.' : undefined,
     };
     setErrors(next);
     setNotice('');
-    if (next.email || next.password) return;
+    if (next.email || next.password || next.consent) return;
     setBusy(true);
     try {
       if (signup) await authService.signup(email, password);
@@ -27,9 +31,40 @@ export function AuthForm({ signup }: { signup: boolean }) {
       setBusy(false);
     }
   };
+
   const google = async () => {
     setNotice('');
     try { await authService.google(); } catch (error) { setNotice(error instanceof AuthServiceError && error.code === 'NOT_CONFIGURED' ? "Accounts aren't enabled on this deployment yet." : 'Google sign-in is unavailable right now.'); }
   };
-  return <main className="mx-auto max-w-md px-gutter py-20"><Card><h1 className="font-display text-3xl font-black">{signup ? 'Create your account' : 'Welcome back'}</h1><form className="mt-7 space-y-4" onSubmit={submit} noValidate><label className="block text-sm font-semibold">Email<input className={`mt-2 w-full rounded-lg border bg-surface px-4 py-3 font-normal ${errors.email ? 'border-danger' : 'border-subtle'}`} value={email} onChange={(event) => setEmail(event.target.value)} type="email" autoComplete="email" aria-invalid={Boolean(errors.email)} />{errors.email && <span className="mt-1 block text-sm text-danger">{errors.email}</span>}</label><label className="block text-sm font-semibold">Password<input className={`mt-2 w-full rounded-lg border bg-surface px-4 py-3 font-normal ${errors.password ? 'border-danger' : 'border-subtle'}`} value={password} onChange={(event) => setPassword(event.target.value)} type="password" autoComplete={signup ? 'new-password' : 'current-password'} aria-invalid={Boolean(errors.password)} />{errors.password && <span className="mt-1 block text-sm text-danger">{errors.password}</span>}</label>{notice && <p role="alert" className="rounded-lg bg-accent-soft p-3 text-sm text-secondary">{notice}</p>}<Button disabled={busy} className="w-full bg-accent text-on-accent">{busy ? 'Working…' : signup ? 'Sign Up' : 'Login'}</Button><Button type="button" className="w-full border border-subtle" onClick={() => void google()}>Continue with Google</Button></form></Card></main>;
+
+  return (
+    <main className="mx-auto max-w-md px-gutter py-20">
+      <Card>
+        <h1 className="font-display text-3xl font-black">{signup ? 'Create your account' : 'Welcome back'}</h1>
+        <form className="mt-7 space-y-4" onSubmit={submit} noValidate aria-describedby={signup ? 'signup-privacy-note' : undefined}>
+          <label className="block text-sm font-semibold" htmlFor="auth-email">
+            Email
+            <input id="auth-email" name="email" className={`mt-2 w-full rounded-lg border bg-surface px-4 py-3 font-normal ${errors.email ? 'border-danger' : 'border-subtle'}`} value={email} onChange={(event) => setEmail(event.target.value)} type="email" autoComplete="email" aria-invalid={Boolean(errors.email)} aria-describedby={errors.email ? 'email-error' : undefined} required />
+            {errors.email && <span id="email-error" className="mt-1 block text-sm text-danger">{errors.email}</span>}
+          </label>
+          <label className="block text-sm font-semibold" htmlFor="auth-password">
+            Password
+            <input id="auth-password" name="password" className={`mt-2 w-full rounded-lg border bg-surface px-4 py-3 font-normal ${errors.password ? 'border-danger' : 'border-subtle'}`} value={password} onChange={(event) => setPassword(event.target.value)} type="password" autoComplete={signup ? 'new-password' : 'current-password'} aria-invalid={Boolean(errors.password)} aria-describedby={errors.password ? 'password-error' : undefined} required minLength={8} />
+            {errors.password && <span id="password-error" className="mt-1 block text-sm text-danger">{errors.password}</span>}
+          </label>
+
+          {signup && (
+            <label id="signup-privacy-note" className="flex items-start gap-3 text-sm text-secondary">
+              <input className="mt-1 h-4 w-4 shrink-0" type="checkbox" checked={consented} onChange={(event) => setConsented(event.target.checked)} aria-invalid={Boolean(errors.consent)} />
+              <span>I acknowledge the <Link className="font-semibold text-accent underline" to="/privacy">Privacy Policy</Link> and <Link className="font-semibold text-accent underline" to="/terms">Terms &amp; Conditions</Link>.</span>
+            </label>
+          )}
+          {errors.consent && <p role="alert" className="text-sm text-danger">{errors.consent}</p>}
+          {notice && <p role="alert" className="rounded-lg bg-accent-soft p-3 text-sm text-secondary">{notice}</p>}
+          <Button disabled={busy || (signup && !consented)} className="w-full bg-accent text-on-accent">{busy ? 'Working…' : signup ? 'Create account' : 'Log in'}</Button>
+          <Button type="button" className="w-full border border-subtle" onClick={() => void google()}>Continue with Google</Button>
+        </form>
+      </Card>
+    </main>
+  );
 }
